@@ -6,18 +6,35 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require('discord.js');
+
 const config = require('../config');
 const { getTickets } = require('../utils/guildSettings');
 
-const typeLabels = { support: '🛠️ دعم فني', purchase: '💳 شراء', deal: '🤝 تعامل' };
+const typeLabels = {
+  support: '🛠️ دعم فني',
+  purchase: '💳 شراء',
+  deal: '🤝 تعامل'
+};
 
 async function createTicket(interaction, client, type) {
+
+  // 🚨 منع التكرار (حل مشكلة تذكرتين)
+  if (interaction.replied || interaction.deferred) return;
+
   const guildData = client.db.getGuild(interaction.guild.id);
-  const existing = Object.values(client.db.data.tickets).find(
-    (t) => t.userId === interaction.user.id && t.guildId === interaction.guild.id && t.open
+
+  const existing = Object.values(client.db.data.tickets || {}).find(
+    (t) =>
+      t.userId === interaction.user.id &&
+      t.guildId === interaction.guild.id &&
+      t.open
   );
+
   if (existing) {
-    return interaction.reply({ content: '❌ لديك تذكرة مفتوحة بالفعل!', ephemeral: true });
+    return interaction.reply({
+      content: '❌ لديك تذكرة مفتوحة بالفعل!',
+      ephemeral: true
+    });
   }
 
   guildData.ticketCounter = (guildData.ticketCounter || 0) + 1;
@@ -30,10 +47,25 @@ async function createTicket(interaction, client, type) {
     type: ChannelType.GuildText,
     parent: tickets.categoryId || null,
     permissionOverwrites: [
-      { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-      { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
+      {
+        id: interaction.guild.id,
+        deny: [PermissionFlagsBits.ViewChannel],
+      },
+      {
+        id: interaction.user.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+        ],
+      },
       ...(tickets.supportRoleId
-        ? [{ id: tickets.supportRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }]
+        ? [{
+            id: tickets.supportRoleId,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+            ],
+          }]
         : []),
     ],
   });
@@ -44,28 +76,60 @@ async function createTicket(interaction, client, type) {
     type,
     open: true,
     createdAt: Date.now(),
+    channelId: channel.id,
   });
 
   const embed = new EmbedBuilder()
     .setColor(config.colors.primary)
-    .setTitle(`${typeLabels[type] || '🎫 تذكرة'}`)
-    .setDescription(`مرحباً ${interaction.user}!\nسيتم الرد عليك قريباً.\n\nاستخدم الأزرار أدناه لإدارة التذكرة.`);
+    .setTitle(typeLabels[type] || '🎫 تذكرة')
+    .setDescription(
+      `مرحباً ${interaction.user}!\nسيتم الرد عليك قريباً.\n\nاستخدم الأزرار أدناه لإدارة التذكرة.`
+    );
 
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('ticket_close').setLabel('إغلاق').setEmoji('🔒').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('ticket_transcript').setLabel('Transcript').setEmoji('📋').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('ticket_add').setLabel('إضافة عضو').setEmoji('➕').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('ticket_remove').setLabel('إزالة عضو').setEmoji('➖').setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder()
+      .setCustomId('ticket_close')
+      .setLabel('إغلاق')
+      .setEmoji('🔒')
+      .setStyle(ButtonStyle.Danger),
+
+    new ButtonBuilder()
+      .setCustomId('ticket_transcript')
+      .setLabel('Transcript')
+      .setEmoji('📋')
+      .setStyle(ButtonStyle.Secondary),
+
+    new ButtonBuilder()
+      .setCustomId('ticket_add')
+      .setLabel('إضافة عضو')
+      .setEmoji('➕')
+      .setStyle(ButtonStyle.Success),
+
+    new ButtonBuilder()
+      .setCustomId('ticket_remove')
+      .setLabel('إزالة عضو')
+      .setEmoji('➖')
+      .setStyle(ButtonStyle.Secondary)
   );
 
-  await channel.send({ content: `${interaction.user}`, embeds: [embed], components: [row] });
-  await interaction.reply({ content: `✅ تم إنشاء تذكرتك: ${channel}`, ephemeral: true });
+  await channel.send({
+    content: `${interaction.user}`,
+    embeds: [embed],
+    components: [row],
+  });
+
+  await interaction.reply({
+    content: `✅ تم إنشاء تذكرتك: ${channel}`,
+    ephemeral: true,
+  });
 }
 
 module.exports = {
-  customIdPrefix: 'ticket_',
+  customId: 'ticket_create',
+
   async execute(interaction, client) {
-    const type = interaction.customId.replace('ticket_', '');
+    const type = interaction.customId.replace('ticket_create_', '');
+
     if (['support', 'purchase', 'deal'].includes(type)) {
       return createTicket(interaction, client, type);
     }
