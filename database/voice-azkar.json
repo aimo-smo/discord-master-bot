@@ -1,0 +1,7 @@
+{
+  "default": [],
+  "reciters": {
+    "default": "القارئ الافتراضي"
+  },
+  "_note": "ضع ملفات MP3 في assets/voice-azkar/ وأضف المسارات هنا، مثال: [\"assets/voice-azkar/zikr1.mp3\"]"
+}

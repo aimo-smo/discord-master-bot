@@ -1,0 +1,37 @@
+{
+  "name": "discord-master-bot",
+  "version": "1.0.0",
+  "description": "بوت Discord متكامل - ألعاب، اقتصاد، تذاكر، إدارة، أذكار، وأكثر",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "deploy": "node deploy-commands.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop discord-master-bot",
+    "pm2:restart": "pm2 restart discord-master-bot",
+    "pm2:logs": "pm2 logs discord-master-bot",
+    "pm2:status": "pm2 status"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "discord.js",
+    "arabic",
+    "azkar"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "canvas": "^3.1.0",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.6.1",
+    "ffmpeg-static": "^5.2.0",
+    "libsodium-wrappers": "^0.7.15",
+    "opusscript": "^0.0.8"
+  }
+}
